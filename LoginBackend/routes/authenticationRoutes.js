@@ -2,8 +2,37 @@ const mongoose = require('mongoose');
 const Account = mongoose.model('accounts');
 
 module.exports = app => {
-	app.get('/account', async (request, response) => {
-		const {username, password} = request.query;
+	app.post('/account/login', async (request, response) => {
+		const {username, password} = request.body;
+
+		console.log(username);
+		console.log(password);
+
+		if (username == null || password == null) {
+			response.send("Invalid username or password");
+			return;
+		}
+
+		let userAccount = await Account.findOne({username: username});
+
+		if (userAccount != null) {
+			if (userAccount.password == password) {
+
+				userAccount.lastAuthentification = Date.now();
+
+				await userAccount.save();
+
+				response.send(userAccount);
+			
+			} else {
+
+				response.send("Login failed");
+			}
+		}
+	});
+
+	app.post('/account/create', async (request, response) => {
+		const {username, password} = request.body;
 
 		console.log(username);
 		console.log(password);
@@ -26,23 +55,12 @@ module.exports = app => {
 
 			await newAccount.save();
 
-			response.send("New account created successfully");
+			response.send(newAccount);
 
 			return;
 		
 		} else {
-			if (userAccount.password == password) {
-
-				userAccount.lastAuthentification = Date.now();
-
-				await userAccount.save();
-
-				response.send("Login successful");
-
-			} else {
-				
-				response.send("Login failed");
-			}
+			response.send("User already exists");
 		}
 	});
 }
